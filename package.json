@@ -1,0 +1,35 @@
+{
+  "name": "pi-truncated-stream-retry",
+  "version": "1.0.0",
+  "description": "Pi extension that retries turns killed by a truncated upstream stream, with per-failure backoff",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "retry",
+    "backoff",
+    "streaming"
+  ],
+  "license": "MIT",
+  "author": "Callum Bicknell",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CallumBicknell/pi-truncated-stream-retry.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CallumBicknell/pi-truncated-stream-retry/issues"
+  },
+  "homepage": "https://github.com/CallumBicknell/pi-truncated-stream-retry#readme",
+  "type": "module",
+  "files": [
+    "extensions"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
+}
