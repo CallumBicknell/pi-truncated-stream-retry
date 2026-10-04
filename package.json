@@ -1,6 +1,6 @@
 {
   "name": "pi-truncated-stream-retry",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pi extension that retries turns killed by a truncated upstream stream, with per-failure backoff",
   "keywords": [
     "pi-package",

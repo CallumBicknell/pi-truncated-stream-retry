@@ -24,10 +24,9 @@ outage sometimes self-heals and sometimes doesn't.
 
 ## What this does
 
-Hooks the `turn_end` boundary. When a turn ends with a truncation signature, it waits,
-then returns `continue: true` so Pi starts a fresh model request.
-
-Default schedule — the wait grows per consecutive failure:
+Records truncation failures at `turn_end`, and once Pi has settled and the agent is idle
+again, sends a real user message to start a fresh run. The wait grows per consecutive
+failure:
 
 | Attempt | Wait   |
 | ------- | ------ |
@@ -43,6 +42,22 @@ stops and surfaces the error rather than retrying forever; one successful turn r
 
 Because a truncated turn produced no usable output, retrying it is safe — there is no
 partial work to preserve or duplicate.
+
+## Why not just use `turn_end`'s `continue`?
+
+Because Pi silently ignores it after a failed turn. Requesting a continuation from
+`turn_end` looks like it works — the chained entry commits, and no error is reported —
+but Pi computes `canContinue=false` and drops the retry. `_buildBoundaryContext` refuses
+a continuation whose final context role is `assistant`, and after a failed turn the last
+message *is* the assistant error message.
+
+Verified against pi 1.0.2 with `--mode json`: the entry is appended, then `agent_end`
+reports `"willRetry": false` and no second request is made. Chaining a `custom_message`
+entry does not fix it either, even with `display: true`.
+
+So this extension waits for `agent_settled`, where the agent is idle and a new run can be
+started unconditionally via `pi.sendUserMessage()`. That guarantees runnable context
+instead of relying on a flag Pi may discard.
 
 ## Install
 
@@ -115,6 +130,20 @@ npm test
 The tests drive the real extension module through a fake `ExtensionAPI`, covering
 detection across every phrasing seen in the wild, the backoff curve, streak resets, the
 retry budget under sustained outage, and abort handling.
+
+## Verified against a live truncated stream
+
+Beyond unit tests, this was exercised end-to-end against a fake OpenAI-compatible
+provider that truncates the SSE stream the same way `billion-context` does — in-band
+`server_error` chunk, then `res.end()` with no `[DONE]`.
+
+| Scenario                                    | Requests | Outcome                    |
+| ------------------------------------------- | -------- | -------------------------- |
+| Truncate, truncate, succeed                 | 3        | Recovered, returned output  |
+| Same, extension removed (control)           | 1        | Error surfaced             |
+| Truncate forever, cap 3                     | 4        | Stopped after cap, error surfaced |
+
+With `retry.enabled` disabled, so recovery can only come from this extension.
 
 ## License
 
